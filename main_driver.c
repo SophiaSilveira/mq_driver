@@ -119,6 +119,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 {
     int pid = (int) task_pid_nr(current);
     int registered = list_pid_exist(pid);
+    int target_add_message = 0;
 
     char *buffer_copy = kstrdup(buffer, GFP_KERNEL);
     char *command, *complement;
@@ -162,18 +163,19 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
         return 0;
     }
 
-    printk(KERN_INFO "MQ_Driver: eu deveria escrever!\n");
+    memmove(command, command + 1, strlen(command));
 
-	/*if (len < MSG_SIZE) {
-		list_add_entry(buffer);
-		list_show();
+    if(strlen(complement) > s_msg){
+        printk(KERN_INFO "MQ_Driver: Message exceeds maximum size of %d bytes!\n", s_msg);
+        return 1;
+    }
+    
+    target_add_message = list_add_msg_entry(command, complement);
+    if(target_add_message == -1)return 1;
 
-		printk(KERN_INFO "Simple Driver: received %zu characters from the user\n", len);
-		
-		return len;
-	} else {
-		printk(KERN_INFO "Simple Driver: too many characters to deal with (%d)\n", len);
-    }*/
+    printk(KERN_INFO "MQ_Driver: Message successfully send!\n");
+    list_show();
+
     kfree(buffer_copy);
 	return 0;
 	

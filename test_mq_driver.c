@@ -71,7 +71,7 @@ int main()
 
         if(strcmp(stringToSend, "/unregister") == 0) break;
 
-        //chama write
+        ret = write(fd, stringToSend, strlen(stringToSend));
     }
 
 	printf("End of the program\n");
