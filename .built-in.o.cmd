@@ -1,1 +1,0 @@
-cmd_/home/sophia/csop2/buildroot-2024.05.2/modules/mq_driver/built-in.o :=  rm -f /home/sophia/csop2/buildroot-2024.05.2/modules/mq_driver/built-in.o; ar rcSTPD /home/sophia/csop2/buildroot-2024.05.2/modules/mq_driver/built-in.o
