@@ -85,7 +85,7 @@ int list_add_msg_entry(const char *name, const char *data){
         return -1;
     }
 
-	if (!data) {
+	if (!data || strlen(data) == 0) {
    		printk(KERN_ERR "Dados da mensagem são NULL, abortando.\n");
     	return -1;
 	}
