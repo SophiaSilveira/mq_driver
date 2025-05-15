@@ -5,19 +5,19 @@
 
 extern struct list_head list;
 
-int list_pid_exist(const int pid){
+struct process * list_pid_exist(const int pid){
     struct process *entry;
 
     if (list_empty(&list)) {
-        return 0;
+        return NULL;
     }
 
     list_for_each_entry(entry, &list, link) {
         if (entry->pid == pid) {
-            return 1;
+            return entry;
         }
     }
-    return 0;
+    return NULL;
 }
 
 int list_add_entry(const char *name, int pid){
@@ -73,7 +73,7 @@ struct process * list_name_exist(const char *name){
     return NULL;
 }
 
-int list_add_msg_entry(const char *name, const char *data){
+int list_add_msg_entry(const char *name, const char *data, int size){
 	struct process *target = NULL;
 	struct message_s *new_node = NULL;
 
@@ -106,12 +106,14 @@ int list_add_msg_entry(const char *name, const char *data){
 	}
 
 	strcpy(new_node->message, data);
+
+	new_node->size = size;
 	list_add_tail(&(new_node->link), &target->list_m);
 
 	return 0;
 }
 
-int list_add_msg_entry_all(int pid, const char *data){
+int list_add_msg_entry_all(int pid, const char *data, int size){
 	int ret = 0;
 	struct process *entry;
 
@@ -122,11 +124,28 @@ int list_add_msg_entry_all(int pid, const char *data){
 
 	list_for_each_entry(entry, &list, link) {
         if (entry->pid == pid) continue;
-		ret = list_add_msg_entry(entry->name, data);
+		ret = list_add_msg_entry(entry->name, data, size);
 		if(ret == -1){
 			printk(KERN_ERR "MQ_DRIVER_ERR: Wasn't possible to delivered the massege for %s process.", entry->name);
 		}
 	}
 
+	return 0;
+}
+
+int list_delete_head_msg(struct process * process){
+	struct message_s *entry = NULL;
+	
+	if (list_empty(&process->list_m)) {
+		printk(KERN_INFO "Empty list.\n");
+		
+		return 1;
+	}
+	
+	entry = list_first_entry(&process->list_m, struct message_s, link);
+	
+	list_del(&entry->link);
+	kfree(entry);
+		
 	return 0;
 }

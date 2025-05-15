@@ -41,12 +41,14 @@ module_param(s_msg, int, 0644);
 
 static int	dev_open(struct inode *, struct file *);
 static int	dev_release(struct inode *, struct file *);
+static ssize_t	dev_read(struct file *, char *, size_t, loff_t *);
 static ssize_t	dev_write(struct file *, const char *, size_t, loff_t *);
 
 
 static struct file_operations fops =
 {
 	.open = dev_open,
+    .read = dev_read,
     .write = dev_write,
 	.release = dev_release,
 };
@@ -115,10 +117,41 @@ static int dev_open(struct inode *inodep, struct file *filep)
 	return 0;
 }
 
+static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
+{
+	int error = 0;
+    int pid = (int) task_pid_nr(current);
+    struct process *registered = list_pid_exist(pid);
+    
+	struct message_s *entry = list_first_entry(&registered->list_m, struct message_s, link);
+   
+	if (list_empty(&registered->list_m)) {
+		printk(KERN_INFO "Simple Driver: no data.\n");
+		
+		return 0;
+	}	
+	
+	// copy_to_user has the format ( * to, *from, size) and returns 0 on success
+	error = copy_to_user(buffer, entry->message, entry->size);
+
+	if (!error) {				// if true then have success
+		printk(KERN_INFO "Simple Driver: sent %d characters to the user\n", entry->size);
+		list_delete_head_msg(registered);
+		
+		return 0;
+	} else {
+		printk(KERN_INFO "Simple Driver: failed to send %d characters to the user\n", error);
+		
+		return -EFAULT;			// Failed -- return a bad address message (i.e. -14)
+	}
+}
+
+
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset)
 {
     int pid = (int) task_pid_nr(current);
-    int registered = list_pid_exist(pid);
+    struct process *registered = list_pid_exist(pid);
+    int reg = 0;
     int target_add_message = 0;
 
     char *buffer_copy = kstrdup(buffer, GFP_KERNEL);
@@ -142,25 +175,25 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
     command_c =  strcmp(command, "/reg");
     //verificação do comando reg
-    if(command_c != 0 && registered == 0){ // Caso o usuário tente rodar um comando sem se registrar
+    if(command_c != 0 && registered == NULL){ // Caso o usuário tente rodar um comando sem se registrar
         printk(KERN_INFO "MQ_Driver: Process need to be registered first\n");
         kfree(buffer_copy);
         return 1;
         
-    }else if(command_c == 0 && registered == 1){ // Caso o usuário tente se registrar novamente
+    }else if(command_c == 0 && registered != NULL){ // Caso o usuário tente se registrar novamente
         printk(KERN_INFO "MQ_Driver: Process alredy registered\n");
         kfree(buffer_copy);
         return 1;
-    }else if(command_c == 0 && registered == 0){ // Usuário deseja se registrar
+    }else if(command_c == 0 && registered == NULL){ // Usuário deseja se registrar
         if(count_n_process == n_process) { // Verifica se já foi atingido o número máximo de inscrições
             printk(KERN_INFO "MQ_Driver: Process not registered.\nProcess limit reached, try again later!\n");
             kfree(buffer_copy);
             return 1;
         }
 
-        registered = list_add_entry(complement, pid);
+        reg = list_add_entry(complement, pid);
 
-        if(registered == -1) { // Se ouve algum erro no egistro
+        if(reg == -1) { // Se ouve algum erro no egistro
             kfree(buffer_copy);
             return -1;
         }
@@ -181,12 +214,12 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
     command_c =  strcmp(command, "/[ALL]");
     if(command_c == 0){
-        target_add_message =  list_add_msg_entry_all(pid, complement);
+        target_add_message =  list_add_msg_entry_all(pid, complement, s_msg);
     }
     else{
         memmove(command, command + 1, strlen(command));
 
-        target_add_message = list_add_msg_entry(command, complement);
+        target_add_message = list_add_msg_entry(command, complement, s_msg);
     }
 
     

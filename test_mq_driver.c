@@ -64,14 +64,23 @@ int main()
         stringToSend[len - 1] = '\0';
 
 		if (len == 1) {
-            //chama função de leitura
-             printf("\nLENDO ALGOOO\n");
-            continue;
+            receive = malloc(len_buffer);
+            memset(receive, 0, len_buffer);
+            ret = read(fd, receive, len_buffer);
+            if(ret < 0){
+			    perror("Failed to read the message from the device.");
+			    return errno;
+		    }
+            printf("Read message: [%s]\n", receive);
+            free(receive);
+        }else if(strcmp(stringToSend, "/unregister") == 0){
+            free(stringToSend);
+            break;
         }
-
-        if(strcmp(stringToSend, "/unregister") == 0) break;
-
-        ret = write(fd, stringToSend, strlen(stringToSend));
+        else{
+            ret = write(fd, stringToSend, strlen(stringToSend));
+        }
+        free(stringToSend);
     }
 
 	printf("End of the program\n");
