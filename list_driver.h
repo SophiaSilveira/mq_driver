@@ -18,4 +18,4 @@ int list_add_entry(const char *name, int pid);
 void list_show(void);
 struct process * list_name_exist(const char *name);
 int list_add_msg_entry(const char *name, const char *data);
-
+int list_add_msg_entry_all(int pid, const char *data);

@@ -10,7 +10,7 @@ Um repositório para a matéria de CSO do quinto semestre T2
 -P3 - Enviar msg - FEITO SOPHIA -> bug
     - Processo não encontrado - FEITO SOPHIA
     - Fila cheia, circular - TO DO
-    - Enviar [ALL] - TO DO
+    - Enviar [ALL] - FEITO SOPHIA
 
 -P4 - Ler msg - TO DO
 

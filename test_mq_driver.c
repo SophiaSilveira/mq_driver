@@ -54,7 +54,7 @@ int main()
     while (1) {
         printf("Type /name_process message, whith %d syze of bytes.\n", len_buffer);
         printf("ENTER to read back the oldest message\n");
-        printf("or ./unregister to finish the program\n");
+        printf("or /unregister to finish the program\n");
 
         stringToSend = malloc(len_buffer + BUFFER_LENGTH);
 

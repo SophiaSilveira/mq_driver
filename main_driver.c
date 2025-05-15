@@ -125,7 +125,10 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     char *command, *complement;
     int command_c;
     
-    if(buffer[0] == '\0') return s_msg;
+    if(buffer[0] == '\0') {
+        kfree(buffer_copy);
+        return s_msg;
+    }
 
     if (buffer_copy == NULL) {
         printk(KERN_ERR "Memory allocation for buffer_copy failed\n");
@@ -139,45 +142,59 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
     command_c =  strcmp(command, "/reg");
     //verificação do comando reg
-    if(command_c != 0 && registered == 0){
+    if(command_c != 0 && registered == 0){ // Caso o usuário tente rodar um comando sem se registrar
         printk(KERN_INFO "MQ_Driver: Process need to be registered first\n");
+        kfree(buffer_copy);
         return 1;
         
-    }else if(command_c == 0 && registered == 1){
+    }else if(command_c == 0 && registered == 1){ // Caso o usuário tente se registrar novamente
         printk(KERN_INFO "MQ_Driver: Process alredy registered\n");
+        kfree(buffer_copy);
         return 1;
-    }else if(command_c == 0 && registered == 0){
-        if(count_n_process == n_process) {
+    }else if(command_c == 0 && registered == 0){ // Usuário deseja se registrar
+        if(count_n_process == n_process) { // Verifica se já foi atingido o número máximo de inscrições
             printk(KERN_INFO "MQ_Driver: Process not registered.\nProcess limit reached, try again later!\n");
+            kfree(buffer_copy);
             return 1;
         }
+
         registered = list_add_entry(complement, pid);
 
-        if(registered == -1) return -1;
+        if(registered == -1) { // Se ouve algum erro no egistro
+            kfree(buffer_copy);
+            return -1;
+        }
 
         printk(KERN_INFO "MQ_Driver: Process successfully registered!\n");
-
         list_show();
-        count_n_process++;
 
+        count_n_process++; // Contador de processos
+        kfree(buffer_copy);
         return 0;
     }
 
-    memmove(command, command + 1, strlen(command));
-
     if(strlen(complement) > s_msg){
         printk(KERN_INFO "MQ_Driver: Message exceeds maximum size of %d bytes!\n", s_msg);
+        kfree(buffer_copy);
         return 1;
     }
-    
-    target_add_message = list_add_msg_entry(command, complement);
-    if(target_add_message == -1)return 1;
 
+    command_c =  strcmp(command, "/[ALL]");
+    if(command_c == 0){
+        target_add_message =  list_add_msg_entry_all(pid, complement);
+    }
+    else{
+        memmove(command, command + 1, strlen(command));
+
+        target_add_message = list_add_msg_entry(command, complement);
+    }
+
+    
     printk(KERN_INFO "MQ_Driver: Message successfully send!\n");
     list_show();
 
     kfree(buffer_copy);
-	return 0;
+	return target_add_message;
 	
 }
 

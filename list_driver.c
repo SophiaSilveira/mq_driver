@@ -25,15 +25,16 @@ int list_add_entry(const char *name, int pid){
 	
 	if (!new_node) {
 		printk(KERN_INFO "Memory allocation failed, this should never fail due to GFP_KERNEL flag\n");
-		
+		kfree(new_node);
 		return -1;
 	}
 	strcpy(new_node->name, name);
     new_node->pid = pid;
+
+	INIT_LIST_HEAD(&(new_node->list_m));
+	
 	list_add_tail(&(new_node->link), &list);
 
-	INIT_LIST_HEAD(&new_node->list_m);
-	
 	return 0;
 }
 
@@ -73,19 +74,19 @@ struct process * list_name_exist(const char *name){
 }
 
 int list_add_msg_entry(const char *name, const char *data){
-	struct process *target;
-	struct message_s *new_node;
+	struct process *target = NULL;
+	struct message_s *new_node = NULL;
 
 	target = list_name_exist(name);
 
-	printk(KERN_INFO "\n\n ALVO %s\n", target->name);
-
-	if (!target) {
+	if (target == NULL) {
         printk(KERN_INFO "MQ_Driver: Target process not found for name: %s\n", name);
         return -1;
     }
 
-	if (!data || strlen(data) == 0) {
+	printk(KERN_INFO "\n\n ALVO %s\n", target->name);
+
+	if (data == NULL || strlen(data) == 0) {
    		printk(KERN_ERR "Dados da mensagem são NULL, abortando.\n");
     	return -1;
 	}
@@ -93,7 +94,7 @@ int list_add_msg_entry(const char *name, const char *data){
 	new_node = kmalloc((sizeof(struct message_s)), GFP_KERNEL);
 		if (!new_node) {
 		printk(KERN_INFO "Memory allocation failed, this should never fail due to GFP_KERNEL flag\n");
-		
+		kfree(new_node);
 		return -1;
 	}
 
@@ -106,6 +107,26 @@ int list_add_msg_entry(const char *name, const char *data){
 
 	strcpy(new_node->message, data);
 	list_add_tail(&(new_node->link), &target->list_m);
+
+	return 0;
+}
+
+int list_add_msg_entry_all(int pid, const char *data){
+	int ret = 0;
+	struct process *entry;
+
+    if (list_empty(&list)) {
+		printk(KERN_INFO "MQ_DRIVER: No process registered to send a message. Try again later\n");
+        return -1;
+    }
+
+	list_for_each_entry(entry, &list, link) {
+        if (entry->pid == pid) continue;
+		ret = list_add_msg_entry(entry->name, data);
+		if(ret == -1){
+			printk(KERN_ERR "MQ_DRIVER_ERR: Wasn't possible to delivered the massege for %s process.", entry->name);
+		}
+	}
 
 	return 0;
 }
