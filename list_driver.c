@@ -97,14 +97,12 @@ int list_add_msg_entry(const char *name, const char *data, int size){
 	new_node = kmalloc((sizeof(struct message_s)), GFP_KERNEL);
 		if (!new_node) {
 		printk(KERN_INFO "Memory allocation failed, this should never fail due to GFP_KERNEL flag\n");
-		kfree(new_node);
 		return -1;
 	}
 
 	new_node->message = kmalloc(strlen(data) + 1, GFP_KERNEL);
 	if (!new_node->message) {
 		printk(KERN_INFO "Memory allocation failed for message string\n");
-		kfree(new_node);  // libera a struct, já que a string falhou
 		return -1;
 	}
 
