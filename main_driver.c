@@ -225,7 +225,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
     
     printk(KERN_INFO "MQ_Driver: Message successfully send!\n");
-    //list_show();
+    list_show();
 
     kfree(buffer_copy);
 	return target_add_message;
