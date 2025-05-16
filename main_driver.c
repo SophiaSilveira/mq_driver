@@ -31,9 +31,6 @@ static int n_msg = -1;
 static int s_msg = -1;
 
 static int count_n_process = 0;
-//static int n_msg = -1;
-//static int s_msg = -1;
-
 
 module_param(n_process, int, 0644);
 module_param(n_msg, int, 0644);
@@ -126,7 +123,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 	struct message_s *entry = list_first_entry(&registered->list_m, struct message_s, link);
    
 	if (list_empty(&registered->list_m)) {
-		printk(KERN_INFO "Simple Driver: no data.\n");
+		printk(KERN_INFO "MQ_Driver: no data.\n");
 		
 		return 0;
 	}	
@@ -135,12 +132,15 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 	error = copy_to_user(buffer, entry->message, entry->size);
 
 	if (!error) {				// if true then have success
-		printk(KERN_INFO "Simple Driver: sent %d characters to the user\n", entry->size);
-		list_delete_head_msg(registered);
+		printk(KERN_INFO "MQ_Driver: sent %d characters to the user\n", entry->size);
 		
+        if(list_delete_head_msg(registered) == 0){
+            registered->count_msg -= 1;
+        }
+
 		return 0;
 	} else {
-		printk(KERN_INFO "Simple Driver: failed to send %d characters to the user\n", error);
+		printk(KERN_INFO "MQ_Driver: failed to send %d characters to the user\n", error);
 		
 		return -EFAULT;			// Failed -- return a bad address message (i.e. -14)
 	}
@@ -191,7 +191,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
             return 1;
         }
 
-        reg = list_add_entry(complement, pid);
+        reg = list_add_entry(complement, pid, n_msg);
 
         if(reg == -1) { // Se ouve algum erro no egistro
             kfree(buffer_copy);
@@ -199,6 +199,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
         }
 
         printk(KERN_INFO "MQ_Driver: Process successfully registered!\n");
+        
         list_show();
 
         count_n_process++; // Contador de processos
@@ -224,7 +225,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
     
     printk(KERN_INFO "MQ_Driver: Message successfully send!\n");
-    list_show();
+    //list_show();
 
     kfree(buffer_copy);
 	return target_add_message;
@@ -234,8 +235,13 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 //Tirar da lista
 static int dev_release(struct inode *inodep, struct file *filep)
 {
-	printk(KERN_INFO "MQ_Driver: device successfully closed\n");
+    int pid = (int) task_pid_nr(current);
+    struct process *registered = list_pid_exist(pid);
 
+    list_delete_entry(registered);
+
+	printk(KERN_INFO "MQ_Driver: device successfully closed\n");
+    --count_n_process;
 	return 0;
 }
 

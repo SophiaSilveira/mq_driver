@@ -20,16 +20,17 @@ struct process * list_pid_exist(const int pid){
     return NULL;
 }
 
-int list_add_entry(const char *name, int pid){
+int list_add_entry(const char *name, int pid, int n_msg){
 	struct process *new_node = kmalloc((sizeof(struct process)), GFP_KERNEL);
 	
 	if (!new_node) {
 		printk(KERN_INFO "Memory allocation failed, this should never fail due to GFP_KERNEL flag\n");
-		kfree(new_node);
 		return -1;
 	}
 	strcpy(new_node->name, name);
     new_node->pid = pid;
+	new_node->n_msg = n_msg;
+	new_node->count_msg = 0;
 
 	INIT_LIST_HEAD(&(new_node->list_m));
 	
@@ -52,7 +53,8 @@ void list_show(void)
             printk(KERN_INFO "  (Sem mensagens)\n");
         } else {
             list_for_each_entry(msg, &entry->list_m, link) {
-                printk(KERN_INFO "  Mensagem: %s\n", msg->message);
+				if(msg->message == NULL) break;
+				printk(KERN_INFO "  Mensagem: %s\n", msg->message);
             }
         }
 	}
@@ -78,6 +80,7 @@ int list_add_msg_entry(const char *name, const char *data, int size){
 	struct message_s *new_node = NULL;
 
 	target = list_name_exist(name);
+
 
 	if (target == NULL) {
         printk(KERN_INFO "MQ_Driver: Target process not found for name: %s\n", name);
@@ -106,9 +109,17 @@ int list_add_msg_entry(const char *name, const char *data, int size){
 	}
 
 	strcpy(new_node->message, data);
-
 	new_node->size = size;
-	list_add_tail(&(new_node->link), &target->list_m);
+
+	if(target->count_msg == target->n_msg){
+		list_delete_head_msg(target);
+		INIT_LIST_HEAD(&new_node->link);
+		list_add(&new_node->link, &target->list_m);
+	}else{
+		list_add_tail(&(new_node->link), &target->list_m);
+		target->count_msg += 1;
+	}
+
 
 	return 0;
 }
@@ -145,7 +156,29 @@ int list_delete_head_msg(struct process * process){
 	entry = list_first_entry(&process->list_m, struct message_s, link);
 	
 	list_del(&entry->link);
+	kfree(&entry->message);
 	kfree(entry);
 		
+	return 0;
+}
+
+int list_delete_entry(struct process * process){
+	struct message_s *entry = NULL, *tmp;
+
+	list_for_each_entry_safe(entry, tmp, &process->list_m, link) {
+		if (entry->message)
+			printk(KERN_INFO "Remove message: %s", entry->message);
+		else
+			printk(KERN_INFO "Remove message: <NULL>");
+
+		list_del(&(entry->link));
+		kfree(entry->message); // se você alocou com kmalloc
+		kfree(entry);
+	}
+
+	printk(KERN_INFO "Remove PROCESS: %s", process->name);
+	list_del(&process->link);
+	kfree(process);
+
 	return 0;
 }
