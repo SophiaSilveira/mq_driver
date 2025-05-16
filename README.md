@@ -7,12 +7,12 @@ Um repositório para a matéria de CSO do quinto semestre T2
      - Fila cheia - FEITO SOPHIA
      - Tirar registro - FEITO SOPHIA
 
--P3 - Enviar msg - FEITO SOPHIA 
-    - Processo não encontrado - FEITO SOPHIA
-    - Fila cheia, circular - FEITO SOPHIA
-    - Enviar [ALL] - FEITO SOPHIA
+ -P3 - Enviar msg - FEITO SOPHIA 
+     - Processo não encontrado - FEITO SOPHIA
+     - Fila cheia, circular - FEITO SOPHIA
+     - Enviar [ALL] - FEITO SOPHIA
 
--P4 - Ler msg - FEITO SOPHIA
+ -P4 - Ler msg - FEITO SOPHIA
 
 **ATENÇÃO** -> Verificar pontos de liberação de memória
 
