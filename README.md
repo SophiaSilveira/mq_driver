@@ -19,4 +19,6 @@ Um repositório para a matéria de CSO do quinto semestre T2
 Finalizar:
     1 - Tipo de entrada como o professor quer
     2 - Bug que trava o processo quando tenta enviar mensagem após voltar de background;
-    3 - Impedir um processo de enviar msg para ele mesmo;
+    3 - Impedir um processo de enviar msg para ele mesmo; - FEITO SOPHIA
+    4 - Ver mais bugs e listar
+

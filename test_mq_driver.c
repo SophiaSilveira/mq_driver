@@ -43,7 +43,7 @@ int main()
 
 		ret = write(fd, stringToSend, strlen(stringToSend));
         if (ret < 0) {
-			perror("Failed to write the message to the device.");
+			perror("Failed to register the process.");
 			return errno;
 		}
         if (ret == 0) break;
@@ -79,6 +79,11 @@ int main()
         }
         else{
             ret = write(fd, stringToSend, strlen(stringToSend));
+            if(ret == 0){
+                printf( "Message successfully send!\n");
+            }else{
+                perror("Failed to write the message to the device.");
+            }
         }
         free(stringToSend);
     }

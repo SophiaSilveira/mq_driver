@@ -199,17 +199,17 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     if(command_c != 0 && registered == NULL){ // Caso o usuário tente rodar um comando sem se registrar
         printk(KERN_INFO "MQ_Driver: Process need to be registered first\n");
         kfree(buffer_copy);
-        return 1;
+        return -1;
         
     }else if(command_c == 0 && registered != NULL){ // Caso o usuário tente se registrar novamente
         printk(KERN_INFO "MQ_Driver: Process alredy registered\n");
         kfree(buffer_copy);
-        return 1;
+        return -1;
     }else if(command_c == 0 && registered == NULL){ // Usuário deseja se registrar
         if(count_n_process == n_process) { // Verifica se já foi atingido o número máximo de inscrições
             printk(KERN_INFO "MQ_Driver: Process not registered.\nProcess limit reached, try again later!\n");
             kfree(buffer_copy);
-            return 1;
+            return -1;
         }
 
         reg = list_add_entry(complement, pid, n_msg);
@@ -232,7 +232,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     if(strlen(complement) > s_msg){
         printk(KERN_INFO "MQ_Driver: Message exceeds maximum size of %d bytes!\n", s_msg);
         kfree(buffer_copy);
-        return 1;
+        return -1;
     }
 
     command_c =  strcmp(command, "/[ALL]");
@@ -241,12 +241,15 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     }
     else{
         memmove(command, command + 1, strlen(command));
-
-        target_add_message = list_add_msg_entry(command, complement, s_msg);
+        if(strcmp(command, registered->name) != 0){
+            target_add_message = list_add_msg_entry(command, complement, s_msg);
+        }else{
+            target_add_message = -1;
+            printk(KERN_INFO "MQ_Driver: A process can't send a message for himself!\n");
+        }
+       
     }
 
-    
-    printk(KERN_INFO "MQ_Driver: Message successfully send!\n");
     list_show();
 
     kfree(buffer_copy);
