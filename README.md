@@ -7,7 +7,7 @@ Um repositório para a matéria de CSO do quinto semestre T2
      - Fila cheia - FEITO SOPHIA
      - Tirar registro - FEITO SOPHIA
 
--P3 - Enviar msg - FEITO SOPHIA -> bug
+-P3 - Enviar msg - FEITO SOPHIA 
     - Processo não encontrado - FEITO SOPHIA
     - Fila cheia, circular - FEITO SOPHIA
     - Enviar [ALL] - FEITO SOPHIA
@@ -18,7 +18,12 @@ Um repositório para a matéria de CSO do quinto semestre T2
 
 Finalizar:
     1 - Tipo de entrada como o professor quer
-    2 - Bug que trava o processo quando tenta enviar mensagem após voltar de background;
-    3 - Impedir um processo de enviar msg para ele mesmo; - FEITO SOPHIA
-    4 - Ver mais bugs e listar
+    2 - Impedir um processo de enviar msg para ele mesmo; - FEITO SOPHIA
+    3 - Ver mais bugs e listar
 
+comando pré build
+
+make -C $BASE_DIR/../modules/mq_driver/
+
+
+Lista bugs:
