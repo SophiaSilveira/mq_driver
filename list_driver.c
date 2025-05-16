@@ -100,7 +100,7 @@ int list_add_msg_entry(const char *name, const char *data, int size){
 		return -1;
 	}
 
-	new_node->message = kmalloc(strlen(data) + 1, GFP_KERNEL);
+	new_node->message = kmalloc(size, GFP_KERNEL);
 	if (!new_node->message) {
 		printk(KERN_INFO "Memory allocation failed for message string\n");
 		return -1;

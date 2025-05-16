@@ -98,6 +98,27 @@ static int mq_init(void){
 
 static void mq_exit(void)
 {
+
+    struct process *proc;
+    struct process *tmp_proc;
+    struct message_s *msg;
+    struct message_s *tmp_msg;
+
+    // Itera sobre todos os processos registrados
+    list_for_each_entry_safe(proc, tmp_proc, &list, link) {
+
+        // Libera todas as mensagens do processo
+        list_for_each_entry_safe(msg, tmp_msg, &proc->list_m, link) {
+            list_del(&msg->link);
+            kfree(msg->message);  // Libera a string da mensagem
+            kfree(msg);           // Libera o struct message_s
+        }
+
+        list_del(&proc->link);
+        kfree(proc->name);  // Libera nome do processo
+        kfree(proc);        // Libera o struct process
+    }
+
     device_destroy(charClass, MKDEV(majorNumber, 0));
 	class_unregister(charClass);
 	class_destroy(charClass);
@@ -203,6 +224,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
         list_show();
 
         count_n_process++; // Contador de processos
+
         kfree(buffer_copy);
         return 0;
     }
