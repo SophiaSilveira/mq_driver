@@ -14,7 +14,7 @@
 #define CLASS_NAME  "mq_class"
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Sophia Mendes da Silveira & ");
+MODULE_AUTHOR("Sophia Mendes da Silveira & Ignacio Prado Chaves");
 MODULE_DESCRIPTION("A very simple kernel module, with parameters.");
 MODULE_VERSION("0.0.1");
 
@@ -149,21 +149,17 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 		return 0;
 	}	
 	
-	// copy_to_user has the format ( * to, *from, size) and returns 0 on success
-	error = copy_to_user(buffer, entry->message, entry->size);
+	error = copy_to_user(buffer, entry->message, entry->size); //Copia mensagem para buffer de retorno
 
-	if (!error) {				// if true then have success
-		printk(KERN_INFO "MQ_Driver: sent %d characters to the user\n", entry->size);
-		
+	if (!error) {		
         if(list_delete_head_msg(registered) == 0){
             registered->count_msg -= 1;
         }
-
+        list_show();
 		return 0;
 	} else {
 		printk(KERN_INFO "MQ_Driver: failed to send %d characters to the user\n", error);
-		
-		return -EFAULT;			// Failed -- return a bad address message (i.e. -14)
+		return -EFAULT;			
 	}
 }
 
@@ -185,36 +181,36 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     }
 
     if (buffer_copy == NULL) {
-        printk(KERN_ERR "Memory allocation for buffer_copy failed\n");
+        printk(KERN_ERR "MQ_DRIVER: Memory allocation for buffer_copy failed\n");
         return -ENOMEM;
     }
 
     command = strsep(&buffer_copy, " ");  // Separa a string no primeiro espaço
     complement = buffer_copy;  // O restante é atribuído à 'complement'
 
-    printk("Command: %s, Name: %s\n", command, complement);
+    printk(KERN_INFO "MQ_DRIVER: Command: %s, Complemento: %s\n", command, complement);
 
     command_c =  strcmp(command, "/reg");
     //verificação do comando reg
     if(command_c != 0 && registered == NULL){ // Caso o usuário tente rodar um comando sem se registrar
         printk(KERN_INFO "MQ_Driver: Process need to be registered first\n");
         kfree(buffer_copy);
-        return -1;
+        return 1;
         
     }else if(command_c == 0 && registered != NULL){ // Caso o usuário tente se registrar novamente
         printk(KERN_INFO "MQ_Driver: Process alredy registered\n");
         kfree(buffer_copy);
-        return -1;
+        return 1;
     }else if(command_c == 0 && registered == NULL){ // Usuário deseja se registrar
         if(count_n_process == n_process) { // Verifica se já foi atingido o número máximo de inscrições
             printk(KERN_INFO "MQ_Driver: Process not registered.\nProcess limit reached, try again later!\n");
             kfree(buffer_copy);
-            return -1;
+            return 1;
         }
 
         reg = list_add_entry(complement, pid, n_msg);
 
-        if(reg == -1) { // Se ouve algum erro no egistro
+        if(reg == -1) { // Se ouve algum erro no registro
             kfree(buffer_copy);
             return -1;
         }
@@ -232,8 +228,22 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     if(strlen(complement) > s_msg){
         printk(KERN_INFO "MQ_Driver: Message exceeds maximum size of %d bytes!\n", s_msg);
         kfree(buffer_copy);
-        return -1;
+        return 1;
     }
+
+    command_c =  strcmp(command, "/unreg");
+    if(command_c == 0){
+        if(strcmp(registered->name,complement) == 0 ){
+            kfree(buffer_copy);
+            list_show();
+            return 3;
+        }else{
+            printk(KERN_INFO "MQ_Driver: A process can't unregister another process!\n");
+            kfree(buffer_copy);
+            return 1;
+        }
+    }
+
 
     command_c =  strcmp(command, "/[ALL]");
     if(command_c == 0){
@@ -244,7 +254,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
         if(strcmp(command, registered->name) != 0){
             target_add_message = list_add_msg_entry(command, complement, s_msg);
         }else{
-            target_add_message = -1;
+            target_add_message = 1;
             printk(KERN_INFO "MQ_Driver: A process can't send a message for himself!\n");
         }
        
@@ -263,9 +273,11 @@ static int dev_release(struct inode *inodep, struct file *filep)
     int pid = (int) task_pid_nr(current);
     struct process *registered = list_pid_exist(pid);
 
-    list_delete_entry(registered);
+    printk(KERN_INFO "MQ_Driver: device successfully closed\n");
 
-	printk(KERN_INFO "MQ_Driver: device successfully closed\n");
+    if(registered == NULL) return 0;
+
+    list_delete_entry(registered);
     --count_n_process;
 	return 0;
 }

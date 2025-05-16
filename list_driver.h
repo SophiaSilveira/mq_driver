@@ -20,6 +20,6 @@ int list_add_entry(const char *name, int pid, int n_msg);
 void list_show(void);
 struct process * list_name_exist(const char *name);
 int list_add_msg_entry(const char *name, const char *data, int size);
-int list_add_msg_entry_all(int pid, const char *data, int size);
+int list_add_msg_entry_all(int pid, char *data, int size);
 int list_delete_head_msg(struct process * process);
 int list_delete_entry(struct process * process);

@@ -54,7 +54,7 @@ int main()
     while (1) {
         printf("Type /name_process message, whith %d syze of bytes.\n", len_buffer);
         printf("ENTER to read back the oldest message\n");
-        printf("or /unregister to finish the program\n");
+        printf("or /unreg to finish the program\n");
 
         stringToSend = malloc(len_buffer + BUFFER_LENGTH);
 
@@ -73,16 +73,17 @@ int main()
 		    }
             printf("Read message: [%s]\n", receive);
             free(receive);
-        }else if(strcmp(stringToSend, "/unregister") == 0){
-            free(stringToSend);
-            break;
         }
         else{
             ret = write(fd, stringToSend, strlen(stringToSend));
             if(ret == 0){
                 printf( "Message successfully send!\n");
-            }else{
+            }else if(ret == 3){
+                free(stringToSend);
+                break;
+            }else if(ret < 0){
                 perror("Failed to write the message to the device.");
+                return errno;
             }
         }
         free(stringToSend);
